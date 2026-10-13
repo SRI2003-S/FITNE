@@ -315,7 +315,7 @@ export function WorkoutModeScreen() {
 
               {!isCollapsed && (
                 <div className="p-2">
-                  <div className="grid grid-cols-[32px_1fr_1fr_44px_32px] items-center gap-2 px-2 pb-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                  <div className="grid grid-cols-[28px_minmax(0,1fr)_minmax(0,1fr)_40px_40px] items-center gap-1.5 px-2 pb-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
                     <span>Set</span>
                     <span>kg</span>
                     <span>Reps</span>
@@ -327,7 +327,7 @@ export function WorkoutModeScreen() {
                     <div
                       key={set.id}
                       className={cn(
-                        'grid grid-cols-[32px_1fr_1fr_44px_32px] items-center gap-2 rounded-xl px-2 py-1.5',
+                        'grid grid-cols-[28px_minmax(0,1fr)_minmax(0,1fr)_40px_40px] items-center gap-1.5 rounded-xl px-2 py-1.5',
                         set.completed && 'bg-success/10',
                       )}
                     >
@@ -366,7 +366,7 @@ export function WorkoutModeScreen() {
                         onClick={() => toggleComplete(ex, set)}
                         aria-label={`Complete set ${set.setNumber}`}
                         className={cn(
-                          'flex h-11 w-11 items-center justify-center rounded-lg border font-bold transition-colors',
+                          'flex h-10 w-10 items-center justify-center rounded-lg border font-bold transition-colors',
                           set.completed
                             ? 'border-success bg-success text-primary-foreground'
                             : 'border-border bg-surface-2 text-muted-foreground hover:border-primary hover:text-primary',
