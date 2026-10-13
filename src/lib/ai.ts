@@ -9,9 +9,9 @@ export async function askCoach(prompt: string): Promise<string | null> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt }),
     })
-    if (!r.ok) return null
-    const data = (await r.json()) as { text?: string }
-    return data.text ?? null
+    const data = (await r.json().catch(() => ({}))) as { text?: string; error?: string }
+    if (!r.ok) return `AI unavailable: ${data.error ?? r.statusText}`
+    return data.text ?? 'No response from model'
   } catch {
     return null
   }
