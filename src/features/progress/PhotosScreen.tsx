@@ -9,6 +9,8 @@ import { Dialog } from '@/components/ui/Dialog'
 import { EmptyState } from '@/components/common/EmptyState'
 import { db } from '@/db/db'
 import { addProgressPhoto, deleteProgressPhoto } from '@/db/repos'
+import { uploadProgressPhoto } from '@/lib/cloudPhotos'
+import { isCloudEnabled } from '@/lib/supabase'
 import { formatDate, todayKey } from '@/lib/date'
 import { toast } from '@/store/ui'
 import type { PhotoView, ProgressPhoto } from '@/types'
@@ -92,6 +94,11 @@ export function PhotosScreen() {
       toast.error('Choose a photo first')
       return
     }
+    let storagePath: string | null = null
+    if (isCloudEnabled()) {
+      toast.info('Uploading to cloud...')
+      storagePath = await uploadProgressPhoto(blob, { date, view })
+    }
     await addProgressPhoto({
       date,
       view,
@@ -99,8 +106,13 @@ export function PhotosScreen() {
       note,
       tags: [view],
       blob,
+      storagePath,
     })
-    toast.success('Photo saved privately on this device')
+    toast.success(
+      storagePath
+        ? 'Photo saved locally and to the cloud'
+        : 'Photo saved privately on this device',
+    )
     resetForm()
     setAddOpen(false)
   }

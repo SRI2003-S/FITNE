@@ -17,13 +17,14 @@ import { Camera, Lightbulb, Ruler, TrendingUp } from 'lucide-react'
 import { PageHeader, SectionHeader } from '@/components/common/PageHeader'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { Dialog } from '@/components/ui/Dialog'
 import { Segmented } from '@/components/ui/Switch'
 import { Badge } from '@/components/ui/Badge'
 import { StatTile } from '@/components/common/StatTile'
 import { EmptyState } from '@/components/common/EmptyState'
 import { db } from '@/db/db'
 import { useGoal, useWeights } from '@/hooks/useAppData'
-import { updateGoal } from '@/db/repos'
+import { updateGoal, logLift } from '@/db/repos'
 import { movingAverage, summarizeWeight, weeklyAverages } from '@/lib/weight'
 import { suggestCalorieAdjustment } from '@/lib/adaptive'
 import { estimate1RM } from '@/lib/oneRm'
@@ -280,6 +281,11 @@ function AdaptiveCard({
 }
 
 function TrainingTab() {
+  const [open, setOpen] = useState(false)
+  const [lift, setLift] = useState('squat')
+  const [weight, setWeight] = useState('')
+  const [reps, setReps] = useState('')
+  const [date, setDate] = useState(todayKey())
   const data = useLiveQuery(async () => {
     const sessions = await db.workoutSessions
       .where('status')
@@ -314,6 +320,9 @@ function TrainingTab() {
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button size="sm" onClick={() => setOpen(true)}>Log lift (weight x reps)</Button>
+      </div>
       <Card>
         <CardContent>
           <div className="mb-3 text-sm font-bold">Estimated 1RM by session</div>
@@ -363,6 +372,88 @@ function TrainingTab() {
           </CardContent>
         </Card>
       )}
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title="Log a lift"
+        description="Record weight lifted for reps to track your personal records."
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+            <Button
+              onClick={async () => {
+                const w = Number(weight)
+                const r = Number(reps)
+                if (!lift.trim() || !w || !r) {
+                  toast.error('Enter lift, weight and reps')
+                  return
+                }
+                await logLift({ lift: lift.trim(), weightKg: w, reps: r, date })
+                toast.success('Lift logged')
+                setWeight('')
+                setReps('')
+                setOpen(false)
+              }}
+            >
+              Save
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Lift / exercise</label>
+            <select
+              value={lift}
+              onChange={(e) => setLift(e.target.value)}
+              className="h-11 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm text-foreground focus:border-primary focus:outline-none"
+            >
+              <option value="squat">Squat</option>
+              <option value="bench">Bench</option>
+              <option value="deadlift">Deadlift</option>
+              <option value="other">Other (free text below)</option>
+            </select>
+            {lift === 'other' && (
+              <input
+                value=""
+                onChange={(e) => setLift(e.target.value || 'other')}
+                placeholder="Exercise name"
+                className="mt-2 h-11 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm text-foreground focus:border-primary focus:outline-none"
+              />
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Weight (kg)</label>
+              <input
+                type="number"
+                step="0.5"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                className="h-11 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm text-foreground focus:border-primary focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Reps</label>
+              <input
+                type="number"
+                value={reps}
+                onChange={(e) => setReps(e.target.value)}
+                className="h-11 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm text-foreground focus:border-primary focus:outline-none"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1.5 block text-xs font-medium text-muted-foreground">Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="h-11 w-full rounded-xl border border-input bg-surface-2 px-3 text-sm text-foreground focus:border-primary focus:outline-none"
+            />
+          </div>
+        </div>
+      </Dialog>
     </div>
   )
 }

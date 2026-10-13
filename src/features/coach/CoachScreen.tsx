@@ -10,6 +10,8 @@ import { mealsToMacros, useDayTarget } from '@/features/nutrition/useNutrition'
 import { explainWeightChange, mealIdeas, summarizeWeek } from '@/lib/insights'
 import { remainingMacros } from '@/lib/nutrition'
 import { todayKey } from '@/lib/date'
+import { askCoach } from '@/lib/ai'
+import { toast } from '@/store/ui'
 
 type Insight = { title: string; lines: string[] }
 
@@ -24,6 +26,8 @@ export function CoachScreen() {
   const weekly = useWeeklyStats(today, profile?.trainingDaysPerWeek ?? 5, 1)
 
   const [insight, setInsight] = useState<Insight | null>(null)
+  const [aiAnswer, setAiAnswer] = useState<string | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
 
   const consumed = useMemo(() => mealsToMacros(meals ?? []), [meals])
   const remaining = remainingMacros(target, consumed)
@@ -66,6 +70,19 @@ export function CoachScreen() {
     })
   }
 
+  async function runAiCoach() {
+    if (!prefs?.aiEnabled) {
+      toast.error('Enable AI features in Settings first')
+      return
+    }
+    setAiLoading(true)
+    const answer = await askCoach(
+      `You are a concise fitness coach. User goal calories ${goal?.calorieTarget ?? 2700}, protein ${goal?.proteinTarget ?? 180}g. Consumed today ${consumed.calories} kcal / ${consumed.protein}g protein. Remaining calories ${remaining.calories}, protein ${remaining.protein}g. Training sessions this week ${weekly?.sessionsCompleted ?? 0} of ${profile?.trainingDaysPerWeek ?? 5}. Give 3 short actionable bullets (no medical advice).`,
+    )
+    setAiAnswer(answer ?? 'AI unavailable right now - rules-based coach is still active.')
+    setAiLoading(false)
+  }
+
   return (
     <div className="space-y-4">
       <PageHeader title="AI Coach" subtitle="Transparent guidance from your own logged data" />
@@ -106,7 +123,21 @@ export function CoachScreen() {
         <Button variant="secondary" onClick={() => setInsight({ title: 'Training', lines: trainingLines(weekly?.sessionsCompleted ?? 0, profile?.trainingDaysPerWeek ?? 5) })}>
           Training review
         </Button>
+        <Button variant="primary" onClick={runAiCoach} disabled={aiLoading}>
+          {aiLoading ? 'Thinking...' : 'Ask AI coach'}
+        </Button>
       </div>
+
+      {aiAnswer && (
+        <Card className="border-primary/20">
+          <CardContent>
+            <div className="mb-2 flex items-center gap-2 text-sm font-bold">
+              <Sparkles className="h-4 w-4 text-primary" /> AI answer
+            </div>
+            <p className="whitespace-pre-wrap text-sm text-muted-foreground">{aiAnswer}</p>
+          </CardContent>
+        </Card>
+      )}
 
       {insight ? (
         <Card>

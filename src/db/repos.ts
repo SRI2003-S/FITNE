@@ -315,6 +315,30 @@ export async function listPersonalRecords(): Promise<PersonalRecord[]> {
   return db.personalRecords.toArray()
 }
 
+export async function logLift(entry: {
+  lift: string
+  exerciseId?: string | null
+  weightKg: number
+  reps: number
+  date: string
+  bodyweightKg?: number | null
+}): Promise<string> {
+  const id = `manual-${uid()}`
+  await db.personalRecords.add({
+    id,
+    lift: entry.lift,
+    exerciseId: entry.exerciseId ?? null,
+    type: 'best_set',
+    weightKg: entry.weightKg,
+    reps: entry.reps,
+    estimated1rm: null,
+    date: entry.date,
+    bodyweightKg: entry.bodyweightKg ?? null,
+    ...base(),
+  })
+  return id
+}
+
 /* ------------------------------- Backup -------------------------------- */
 
 export async function resetAllData() {
