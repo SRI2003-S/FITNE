@@ -25,8 +25,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       },
     )
     const data = await r.json()
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text
-    if (!text) return res.status(502).json({ error: 'No response from model' })
+    const candidate = data?.candidates?.[0]
+    const text = candidate?.content?.parts?.map((p: any) => p.text).join('')?.trim()
+    if (!text) {
+      return res.status(502).json({
+        error: 'No response from model',
+        finishReason: candidate?.finishReason,
+        safetyRatings: candidate?.safetyRatings,
+        raw: data,
+      })
+    }
     return res.status(200).json({ text })
   } catch (e) {
     return res.status(500).json({ error: (e as Error).message })
