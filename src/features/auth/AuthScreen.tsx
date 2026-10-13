@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '@/components/common/PageHeader'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -15,7 +14,6 @@ export function AuthScreen() {
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const auth = useAuth()
-  const navigate = useNavigate()
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
