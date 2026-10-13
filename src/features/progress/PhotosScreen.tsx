@@ -53,6 +53,9 @@ function PhotoTile({ photo, onClick, selected }: { photo: ProgressPhoto; onClick
           {photo.view}
           {photo.weightKg ? ` · ${photo.weightKg} kg` : ''}
         </div>
+        {photo.note && (
+          <div className="mt-0.5 line-clamp-2 text-[10px] text-white/80">{photo.note}</div>
+        )}
       </div>
     </button>
   )

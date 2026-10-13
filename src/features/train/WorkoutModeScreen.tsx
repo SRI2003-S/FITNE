@@ -38,6 +38,7 @@ export function WorkoutModeScreen() {
   const [session, setSession] = useState<WorkoutSession | null>(null)
   const [initialised, setInitialised] = useState(false)
   const [finishOpen, setFinishOpen] = useState(false)
+  const [photoPromptOpen, setPhotoPromptOpen] = useState(false)
   const [discardOpen, setDiscardOpen] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [note, setNote] = useState('')
@@ -242,7 +243,8 @@ export function WorkoutModeScreen() {
     if (persistRef.current) clearTimeout(persistRef.current)
     await finishSession(session!, note)
     toast.success('Workout saved. Well done.')
-    navigate('/train')
+    setFinishOpen(false)
+    setPhotoPromptOpen(true)
   }
 
   async function handleDiscard() {
@@ -488,6 +490,36 @@ export function WorkoutModeScreen() {
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="How did it feel? Any niggles?" />
           </div>
         </div>
+      </Dialog>
+
+      <Dialog
+        open={photoPromptOpen}
+        onClose={() => {
+          setPhotoPromptOpen(false)
+          navigate('/train')
+        }}
+        title="Log a progress photo?"
+        description="Capture how you look after this workout for your physique timeline."
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => {
+              setPhotoPromptOpen(false)
+              navigate('/train')
+            }}>
+              Skip
+            </Button>
+            <Button onClick={() => {
+              setPhotoPromptOpen(false)
+              navigate('/progress/photos')
+            }}>
+              Add photo
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-muted-foreground">
+          Photos stay private on this device by default, and sync to Supabase when you're signed in.
+        </p>
       </Dialog>
 
       <ExercisePickerDialog
