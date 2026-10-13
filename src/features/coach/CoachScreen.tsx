@@ -28,6 +28,9 @@ export function CoachScreen() {
   const [insight, setInsight] = useState<Insight | null>(null)
   const [aiAnswer, setAiAnswer] = useState<string | null>(null)
   const [aiLoading, setAiLoading] = useState(false)
+  const [chat, setChat] = useState<{ role: 'user' | 'assistant'; text: string }[]>([])
+  const [draft, setDraft] = useState('')
+  const [chatLoading, setChatLoading] = useState(false)
 
   const consumed = useMemo(() => mealsToMacros(meals ?? []), [meals])
   const remaining = remainingMacros(target, consumed)
@@ -81,6 +84,26 @@ export function CoachScreen() {
     )
     setAiAnswer(answer ?? 'AI unavailable right now - rules-based coach is still active.')
     setAiLoading(false)
+  }
+
+  async function sendChat() {
+    const text = draft.trim()
+    if (!text) return
+    if (!prefs?.aiEnabled) {
+      toast.error('Enable AI features in Settings first')
+      return
+    }
+    const next = [...chat, { role: 'user' as const, text }]
+    setChat(next)
+    setDraft('')
+    setChatLoading(true)
+    const prompt = `You are a concise, supportive fitness coach for FORGE. User goal calories ${goal?.calorieTarget ?? 2700}, protein ${goal?.proteinTarget ?? 180}g. Consumed today ${consumed.calories} kcal / ${consumed.protein}g protein. Remaining ${remaining.calories} kcal / ${remaining.protein}g protein. Sessions this week ${weekly?.sessionsCompleted ?? 0} of ${profile?.trainingDaysPerWeek ?? 5}. Conversation so far:\n${next
+      .map((m) => `${m.role}: ${m.text}`)
+      .join('\n')}\nassistant:`
+
+    const answer = await askCoach(prompt)
+    setChat([...next, { role: 'assistant', text: answer ?? 'AI unavailable right now - rules-based coach is still active.' }])
+    setChatLoading(false)
   }
 
   return (
@@ -138,6 +161,49 @@ export function CoachScreen() {
           </CardContent>
         </Card>
       )}
+
+      <Card className="border-primary/20">
+        <CardContent>
+          <div className="mb-3 flex items-center gap-2 text-sm font-bold">
+            <Sparkles className="h-4 w-4 text-primary" /> Chat with coach
+          </div>
+          <div className="max-h-72 space-y-2 overflow-y-auto rounded-xl border border-border bg-surface-2 p-3">
+            {chat.length === 0 && (
+              <p className="text-xs text-muted-foreground">
+                Ask anything about your training, nutrition, or weight trend.
+              </p>
+            )}
+            {chat.map((m, i) => (
+              <div
+                key={i}
+                className={'rounded-lg px-3 py-2 text-sm ' + (m.role === 'user'
+                  ? 'ml-8 bg-primary/15 text-foreground'
+                  : 'mr-8 bg-surface text-muted-foreground')}
+              >
+                {m.text}
+              </div>
+            ))}
+            {chatLoading && <p className="text-xs text-muted-foreground">Thinking...</p>}
+          </div>
+          <div className="mt-3 flex gap-2">
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  void sendChat()
+                }
+              }}
+              placeholder="Ask your coach..."
+              className="h-11 flex-1 rounded-xl border border-input bg-surface-2 px-3 text-sm text-foreground focus:border-primary focus:outline-none"
+            />
+            <Button onClick={() => void sendChat()} disabled={chatLoading}>
+              Send
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {insight ? (
         <Card>
