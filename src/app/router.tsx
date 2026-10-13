@@ -5,6 +5,8 @@ import { AppShell } from '@/components/layout/AppShell'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { db, META_KEYS } from '@/db/db'
 import { HomeScreen } from '@/features/home/HomeScreen'
+import { AuthScreen } from '@/features/auth/AuthScreen'
+import { useAuth } from '@/hooks/useAuth'
 import { TrainScreen } from '@/features/train/TrainScreen'
 import { NutritionScreen } from '@/features/nutrition/NutritionScreen'
 import { CoachScreen } from '@/features/coach/CoachScreen'
@@ -32,6 +34,23 @@ function RouteFallback() {
   )
 }
 
+function AuthGate({ children }: { children: ReactNode }) {
+  const { configured, loading, user } = useAuth()
+  const location = useLocation()
+  if (!configured) return <>{children}</>
+  if (loading) {
+    return (
+      <div className="flex min-h-svh items-center justify-center">
+        <Skeleton className="h-8 w-40" />
+      </div>
+    )
+  }
+  if (!user && location.pathname !== '/auth') {
+    return <Navigate to="/auth" replace />
+  }
+  return <>{children}</>
+}
+
 function OnboardingGate({ children }: { children: ReactNode }) {
   const location = useLocation()
   const complete = useLiveQuery(async () => {
@@ -57,10 +76,12 @@ function OnboardingGate({ children }: { children: ReactNode }) {
 export function AppRoutes() {
   return (
     <Suspense fallback={<RouteFallback />}>
-      <OnboardingGate>
-        <Routes>
-          {/* Full-screen workout mode lives outside the app shell */}
-          <Route path="/workout/:id" element={<WorkoutModeScreen />} />
+      <AuthGate>
+        <OnboardingGate>
+          <Routes>
+            <Route path="/auth" element={<AuthScreen />} />
+            {/* Full-screen workout mode lives outside the app shell */}
+            <Route path="/workout/:id" element={<WorkoutModeScreen />} />
 
           <Route element={<AppShell />}>
             <Route path="/" element={<HomeScreen />} />
@@ -75,6 +96,7 @@ export function AppRoutes() {
           </Route>
         </Routes>
       </OnboardingGate>
+      </AuthGate>
     </Suspense>
   )
 }

@@ -6,7 +6,7 @@ export const SUPABASE_CONFIGURED = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY)
 
 // Lazily created so the app boots without env vars (local-first mode).
 export const supabase = SUPABASE_CONFIGURED
-  ? createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, { auth: { persistSession: false } })
+  ? createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!)
   : null
 
 export function isCloudEnabled() {

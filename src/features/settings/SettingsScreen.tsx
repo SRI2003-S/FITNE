@@ -35,6 +35,8 @@ import { reconcileTargets } from '@/lib/nutrition'
 import { nowISO, round } from '@/lib/utils'
 import { toast } from '@/store/ui'
 import { useUIStore, type Theme } from '@/store/ui'
+import { useAuth } from '@/hooks/useAuth'
+import { syncAll } from '@/lib/sync'
 import type { Reminder, TrainingMax } from '@/types'
 import { cn } from '@/lib/utils'
 
@@ -659,8 +661,10 @@ function DataSection() {
 function PrivacySection() {
   const prefs = usePreferences()
   return (
-    <section>
-      <SectionHeader title="Privacy & AI" />
+    <>
+      <AccountSection />
+      <section>
+        <SectionHeader title="Privacy & AI" />
       <Card>
         <CardContent className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-bold">
@@ -686,6 +690,55 @@ function PrivacySection() {
             <Badge tone="success">No public image URLs</Badge>
             <Badge tone="neutral">No ads / no tracking</Badge>
           </div>
+        </CardContent>
+      </Card>
+    </section>
+    </>
+  )
+}
+
+function AccountSection() {
+  const auth = useAuth()
+  const [busy, setBusy] = useState(false)
+  if (!auth.configured) return null
+  return (
+    <section>
+      <SectionHeader title="Cloud account" />
+      <Card>
+        <CardContent className="space-y-3">
+          {auth.user ? (
+            <>
+              <div className="text-sm">
+                Signed in as <span className="font-semibold">{auth.user.email}</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  loading={busy}
+                  onClick={async () => {
+                    setBusy(true)
+                    try {
+                      await syncAll(auth.user!.id)
+                      toast.success('Sync complete')
+                    } catch (e: any) {
+                      toast.error(e?.message ?? 'Sync failed')
+                    } finally {
+                      setBusy(false)
+                    }
+                  }}
+                >
+                  Sync now
+                </Button>
+                <Button size="sm" variant="danger" onClick={() => void auth.signOut()}>
+                  Sign out
+                </Button>
+              </div>
+            </>
+          ) : (
+            <Button size="sm" onClick={() => (window.location.href = '/auth')}>
+              Sign in / create account
+            </Button>
+          )}
         </CardContent>
       </Card>
     </section>
