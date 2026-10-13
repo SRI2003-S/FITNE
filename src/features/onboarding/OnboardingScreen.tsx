@@ -10,8 +10,8 @@ import { Card, CardContent } from '@/components/ui/Card'
 import { Field, Input } from '@/components/ui/Field'
 import { useGoal, useProfile, useTrainingMaxes } from '@/hooks/useAppData'
 import { db, META_KEYS } from '@/db/db'
-import { updateGoal, updateProfile } from '@/db/repos'
-import { reconcileTargets } from '@/lib/nutrition'
+import { updateGoal, updateProfile, updatePreferences } from '@/db/repos'
+import { recommendedTargets } from '@/lib/targets'
 import { nowISO, round } from '@/lib/utils'
 import { todayKey } from '@/lib/date'
 import { toast } from '@/store/ui'
@@ -57,11 +57,14 @@ export function OnboardingScreen() {
   })
 
   const values = watch()
-  const reconciled = reconcileTargets(
-    Number(values.calorieTarget) || 0,
-    Number(values.proteinTarget) || 0,
-    Number(values.fatTarget) || 0,
-  )
+  const calc = recommendedTargets({
+    age: Number(values.age) || 22,
+    heightCm: Number(values.heightCm) || 180,
+    weightKg: Number(values.weightKg) || 80,
+    goalWeightKg: Number(values.goalWeightKg) || 75,
+    activityLevel: profile?.activityLevel ?? 'moderate',
+  })
+  const reconciled = { calories: calc.calories, protein: calc.protein, carbs: calc.carbs, fat: calc.fat }
 
   const STEPS = [
     ['Profile', ['name', 'age', 'heightCm', 'weightKg', 'goalWeightKg']],
@@ -83,15 +86,23 @@ export function OnboardingScreen() {
       age: data.age,
       heightCm: data.heightCm,
     })
+    const onboardingTargets = recommendedTargets({
+      age: data.age,
+      heightCm: data.heightCm,
+      weightKg: data.weightKg,
+      goalWeightKg: data.goalWeightKg,
+      activityLevel: profile?.activityLevel ?? 'moderate',
+    })
     await updateGoal({
       startWeightKg: data.weightKg,
       currentWeightKg: data.weightKg,
       goalWeightKg: data.goalWeightKg,
-      calorieTarget: round(reconciled.calories, 0),
-      proteinTarget: round(reconciled.protein, 0),
-      carbTarget: round(reconciled.carbs, 0),
-      fatTarget: round(reconciled.fat, 0),
+      calorieTarget: round(onboardingTargets.calories, 0),
+      proteinTarget: round(onboardingTargets.protein, 0),
+      carbTarget: round(onboardingTargets.carbs, 0),
+      fatTarget: round(onboardingTargets.fat, 0),
     })
+    await updatePreferences({ waterTargetMl: onboardingTargets.waterMl })
 
     const liftMap: Record<string, number> = {
       squat: data.squat1rm,
