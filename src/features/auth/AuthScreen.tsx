@@ -27,7 +27,7 @@ export function AuthScreen() {
       const uid = data?.session?.user?.id
       if (uid) await syncAll(uid)
       toast.success(mode === 'signin' ? 'Signed in & synced' : 'Account created')
-      navigate('/', { replace: true })
+      window.location.replace('/')
     } catch (err: any) {
       toast.error(err?.message ?? 'Auth failed')
     } finally {

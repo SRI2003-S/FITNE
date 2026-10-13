@@ -66,7 +66,7 @@ function OnboardingGate({ children }: { children: ReactNode }) {
     )
   }
 
-  if (!complete && location.pathname !== '/onboarding') {
+  if (!complete && location.pathname !== '/onboarding' && location.pathname !== '/auth') {
     return <Navigate to="/onboarding" replace />
   }
 
